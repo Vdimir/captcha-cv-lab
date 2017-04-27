@@ -64,19 +64,35 @@ def get_hist(img):
     return hist
 
 
-def find_longest_subseq(arr, elem):
-    max_len = 0
-    cur_len = 0
-    changes = 0
-    for x in arr:
-        if x <= elem:
-            cur_len += 1
+class IntervalBuilder:
+    def __init__(self):
+        self.beg = None
+        self.end = None
+        self.ints = []
+
+    def cont(self, val):
+        if self.beg is None:
+            self.beg = val
         else:
-            max_len = max(max_len, cur_len)
-            if (cur_len > 0):
-                changes += 1
-            cur_len = 0
-    return (max_len, changes)
+            self.end = val
+
+    def brk(self):
+        if self.end is not None:
+            self.ints.append((self.beg, self.end))
+        self.beg = None
+        self.end = None
+
+
+def fund_cont_subsec(arr):
+    intervals = IntervalBuilder()
+    for i,a in enumerate(arr):
+        if a != 0:
+            intervals.cont(i)
+        else:
+            intervals.brk()
+    intervals.brk()
+    return intervals.ints
+
 
 #     inr_erode = cv2.erode(inr, cv2.getStructuringElement(cv2.MORPH_RECT,(3,3)))
 #     (x,y,w,h) = tuple(map(add, cv2.boundingRect(inr_erode), (-4,-4,4,4)))
