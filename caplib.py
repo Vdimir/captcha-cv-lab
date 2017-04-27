@@ -4,6 +4,8 @@ import random
 from sklearn.cluster import KMeans
 import numpy as np
 
+# from operator import is_not
+# is_not_none = partial(is_not, None)
 
 def show(img):
     if isinstance(img, list):
@@ -27,6 +29,16 @@ def crop(img):
     return t
 
 
+def crop_erode(img):
+    c_erode = cv2.erode(img, cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(3,3)))
+    c_erode = cv2.dilate(c_erode, cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(2,2)))
+    (x, y, w, h) = cv2.boundingRect(c_erode)
+    d=5
+    (x, y, w, h) = (max(x-d,0), max(y-d,0), w+d, h+d)
+    t = img[y:y + h, x:x + w]
+    return (x,t)
+
+
 def load_random_img(n=None):
     fname = n or round(random.random()*100)
     img = cv2.imread("img/4/%d.jpg" % fname)
@@ -45,9 +57,10 @@ def get_cluster(img, cluster):
 def get_hist(img):
     arr = np.transpose(img)
     hist = np.zeros(arr.shape[0])
-
+    m = np.max(arr)
+    m = max([m, 1])
     for i in range(arr.shape[0]):
-        hist[i] = sum(arr[i])
+        hist[i] = sum(arr[i]/m)
     return hist
 
 
@@ -89,23 +102,42 @@ def clusterize(img):
         quant = quant.reshape((h, w, 3)).astype("uint8")
         yield quant
 
-def simple_bin(img):
+
+def iterate_2d_arr(img):
     for row in img:
         for p in row:
-            if (np.all(p == [0,0,0])):
-                p[:] = 0
-            else:
-                p[:] = 255
-    return img
+            yield p
 
-# import pytesseract
+
+def simple_bin(img):
+    res = np.zeros((img.shape[0], img.shape[1]), np.uint8)
+
+    for x in range(img.shape[0]):
+        for y in range(img.shape[1]):
+            if not np.all(img[x,y] == 0):
+                res[x,y] = 1
+
+    return res
+
+
+def non_zero_pixels(img):
+    s = 0
+    for p in iterate_2d_arr(img):
+        if (not np.all(p == 0)):
+            s += 1
+    return s
+
+
+
+
+import pytesseract
 #
-# from PIL import Image
-# def recognize(img):
-#     pilimg = Image.fromarray(img)
-#     res = pytesseract.image_to_string(pilimg,
-#                                       config='-psm 8 -c tessedit_char_whitelist=ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890')
-#     return res
+from PIL import Image
+def recognize(img):
+    pilimg = Image.fromarray(img)
+    res = pytesseract.image_to_string(pilimg,
+                                      config='-psm 8 -c tessedit_char_whitelist=ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890')
+    return res
 
 # dirmane = "/home/vdimir/userdata2/cvis/captcha/out/"+str(fname)
 # if not os.path.exists(dirmane):
