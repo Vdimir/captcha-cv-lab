@@ -10,15 +10,17 @@ import pytesseract
 from PIL import Image
 
 
-def show(img):
+def show(img, **kwargs):
     if isinstance(img, list):
         for i in img:
-            show_image(i)
+            show_image(i, **kwargs)
     else:
-        show_image(img)
+        show_image(img, **kwargs)
 
 
-def show_image(img):
+def show_image(img, **kwargs):
+    if kwargs.get('cmap') is not None:
+        plt.imshow(img, **kwargs)
     if len(img.shape) == 2:
         plt.imshow(img, cmap='gray')
     else:
