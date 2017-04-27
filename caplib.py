@@ -148,7 +148,7 @@ def non_zero_pixels(img):
 def recognize(img):
     pilimg = Image.fromarray(img)
     res = pytesseract.image_to_string(pilimg,
-                                      config='-psm 8 -c tessedit_char_whitelist=ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890')
+                                      config='-psm 10 -c tessedit_char_whitelist=abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890')
     return res
 
 
