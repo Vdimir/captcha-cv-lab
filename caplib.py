@@ -3,9 +3,12 @@ from matplotlib import pyplot as plt
 import random
 from sklearn.cluster import KMeans
 import numpy as np
+from functools import reduce
+from operator import add
 
-# from operator import is_not
-# is_not_none = partial(is_not, None)
+import pytesseract
+from PIL import Image
+
 
 def show(img):
     if isinstance(img, list):
@@ -44,15 +47,18 @@ def load_random_img(n=None):
     img = cv2.imread("img/4/%d.jpg" % fname)
     return fname, img
 
+
 def k_means_cluster_centres(image):
     clt = KMeans(n_clusters=12)
     clt.fit(image)
     return clt.cluster_centers_
 
+
 def get_cluster(img, cluster):
     d = 20
     res = cv2.inRange(img, cluster-d,cluster+d)
     return res
+
 
 def get_hist(img):
     arr = np.transpose(img)
@@ -93,13 +99,6 @@ def fund_cont_subsec(arr):
     intervals.brk()
     return intervals.ints
 
-
-#     inr_erode = cv2.erode(inr, cv2.getStructuringElement(cv2.MORPH_RECT,(3,3)))
-#     (x,y,w,h) = tuple(map(add, cv2.boundingRect(inr_erode), (-4,-4,4,4)))
-#     res = inr[y:y+h,x:x+w]
-# #     res = inr
-#     if (w == 0 or h == 0):
-#         return None
 
 def clusterize(img):
     h,w = img.shape[0],img.shape[1]
@@ -144,18 +143,60 @@ def non_zero_pixels(img):
     return s
 
 
-
-
-import pytesseract
-#
-from PIL import Image
 def recognize(img):
     pilimg = Image.fromarray(img)
     res = pytesseract.image_to_string(pilimg,
                                       config='-psm 8 -c tessedit_char_whitelist=ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890')
     return res
 
-# dirmane = "/home/vdimir/userdata2/cvis/captcha/out/"+str(fname)
-# if not os.path.exists(dirmane):
-#     os.makedirs(dirmane)
-# cv2.imwrite(dirmane+"/"+ str(x)+".jpg", quant)
+
+def filter_comp_count(img):
+    c2 = cv2.connectedComponentsWithStats(morph(img))[0]
+    return 1 < c2 <= 10
+
+
+def morph(img):
+    c_erode = cv2.erode(img, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3)))
+    c_erode = cv2.morphologyEx(c_erode, cv2.MORPH_DILATE,
+                               cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 6)))
+    return c_erode
+
+
+def try_collect_letters(img):
+    c_m = morph(img)
+    return fund_cont_subsec(get_hist(c_m))
+
+
+def non_zero_seq(img):
+    int_len = lambda t: t[1] - t[0]
+    s = try_collect_letters(img)
+    # s = filter(lambda t: int_len(t) >= 10, s)
+    # s = list(s)
+    # if len(s) == 0:
+    #     return False
+    # if len(s) > 10:
+    #     return False
+    if any(map(lambda t: int_len(t) < 10, s)):
+        return False
+    if any(map(lambda t: int_len(t) > 50, s)):
+        return False
+    return True
+
+
+def get_filtered_clusters(img):
+    clusters = map(simple_bin, clusterize(img))
+    clusters = filter(filter_comp_count, clusters)
+    clusters = filter(non_zero_seq, clusters)
+    clusters = list(clusters)
+    return clusters
+
+
+def break_captcha(img):
+    res = []
+    for c in get_filtered_clusters(img):
+        inter = try_collect_letters(c)
+        for (b, e) in inter:
+            letter = recognize(c[:, b:e])
+            res.append((b, letter))
+    r = reduce(add, map(lambda x: x[1], sorted(res, key=lambda x: x[0])), '')
+    return r
