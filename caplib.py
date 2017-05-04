@@ -91,7 +91,7 @@ class IntervalBuilder:
         self.end = None
 
 
-def fund_cont_subsec(arr):
+def find_cont_subsec(arr):
     intervals = IntervalBuilder()
     for i,a in enumerate(arr):
         if a != 0:
@@ -166,7 +166,7 @@ def morph(img):
 
 def try_collect_letters(img):
     c_m = morph(img)
-    return fund_cont_subsec(get_hist(c_m))
+    return find_cont_subsec(get_hist(c_m))
 
 
 def non_zero_seq(img):
