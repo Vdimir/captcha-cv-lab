@@ -7,7 +7,7 @@ import cv2
 ```
 
 ### Пример работы алгоритма
-Код вынесен в отдельный модуль `caplib`
+Основной код вынесен в отдельный модуль `caplib`
 
 Функция `break_captcha` рапознает капчу и возвращает результат в виде строки
 
@@ -17,7 +17,6 @@ import cv2
 (fname,img) = load_random_img(68)
 print(break_captcha(img))
 show(img)
-print("Image number:", fname)
 ```
 
     WNB2
@@ -37,17 +36,6 @@ print("Image number:", fname)
 
 
 ```python
-def show_clusters(clusters, labels = None):
-    fig = plt.figure(figsize = (10,8))
-
-    for (i, c) in enumerate(clusters, 1):
-        a = fig.add_subplot(4,2,i)
-        if labels is not None:
-            a.set_title(labels[i-1])
-        plt.axis('off')
-        plt.imshow(c,cmap='gray',interpolation='none')
-
-
 clusters = list(map(simple_bin, clusterize(img)))
 show_clusters(clusters)
 
@@ -111,21 +99,7 @@ show_clusters(stage1_clusters)
 Видно, что буквы имеют определенную ширину в пределах от 10 до 50 пикселей.
 Поэтому выбираем только те изображения, где все интервалы подряд идущих ненулевых столбцов имеют заданную ширину.
 
-
-```python
-fig = plt.figure(figsize = (10,8))
-i=1
-for c in stage1_clusters:
-    a = fig.add_subplot(4,2,i)
-    a.set_title(find_cont_subsec(get_hist(c)))
-    plt.axis('off')
-    plt.imshow(c,cmap='gray')
-    a = fig.add_subplot(4,2,i+1)    
-    plt.plot(get_hist(c))
-    i+=2
-plt.show()
-```
-
+Результаты `find_cont_subsec` и `get_hist`:
 
 ![png](demo_img/output_12_0.png)
 
@@ -168,11 +142,8 @@ show_clusters(stage2_clusters, list(map(recog, stage2_clusters)))
 ```python
 fig = plt.figure(figsize = (10,8))
 for i in range(1,9):    
-    (_,img) = load_random_img()    
-    a = fig.add_subplot(4,2,i)
-    a.set_title(break_captcha(img))
-    plt.axis('off')
-    plt.imshow(img,cmap='brg',interpolation='none')
+    (_,img) = load_random_img()
+    show(img, break_captcha(img))
 ```
 
 
